@@ -1,6 +1,13 @@
-const mod1 = require('module1')
+require ('babel-register')
+const express = require('express')
+const app = express()
 
-mod1.sayHello()
-mod1.sayHi()
+app.get('/api', (req, res) => {
+    res.send('Root API')
+})
 
-console.log(mod1.hello)
+app.get('/api/v1', (req, res) => {
+    res.send('Root API Version1')
+})
+
+app.listen(8080, () => console.log('Started on port 8080.'))

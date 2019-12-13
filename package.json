@@ -2,20 +2,24 @@
   "name": "NodeJsRestApi",
   "version": "1.0.0",
   "description": "",
-  "main": "app.js",
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andyafene/nodeAPI.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "devDependencies": {
-    "eslint": "^6.7.2",
-    "eslint-config-google": "^0.14.0",
-    "eslint-plugin-react": "^7.17.0"
+  "bugs": {
+    "url": "https://github.com/andyafene/nodeAPI/issues"
   },
+  "homepage": "https://github.com/andyafene/nodeAPI#readme",
   "dependencies": {
     "babel-register": "^6.26.0",
-    "lodash": "^4.17.15"
+    "express": "^4.17.1"
   }
 }
