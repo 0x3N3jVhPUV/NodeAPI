@@ -1,13 +1,27 @@
 require ('babel-register')
 const express = require('express')
+const morgan = require('morgan')
 const app = express()
 
-app.get('/api', (req, res) => {
-    res.send('Root API')
-})
+const members = [
+    {
+        id: 1,
+        name: 'Andy',
+    },
+    {
+        id: 2,
+        name: 'Lionel',
+    },
+    {
+        id: 3,
+        name: 'Jamal',
+    }
+]
 
-app.get('/api/v1', (req, res) => {
-    res.send('Root API Version1')
+app.use(morgan('dev'))
+
+app.get('/api/v1/members/:id', (req, res) => {
+    res.send(members[(req.params.id) - 1])
 })
 
 app.listen(8080, () => console.log('Started on port 8080.'))
