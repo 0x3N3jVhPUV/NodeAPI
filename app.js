@@ -31,7 +31,7 @@ app.use(express.urlencoded({ extended: true })) // for parsing application/x-www
 
 
 
-//-----------------------------------GET--------------------------------------------------------------
+//-----------------------------------GET BY ID--------------------------------------------------------------
 app.get('/api/v1/members/:id', (req, res) => {
 
     let index = getIndex(req.params.id);
@@ -43,6 +43,35 @@ app.get('/api/v1/members/:id', (req, res) => {
     }
 })
 
+//--------------------------------------PUT-----------------------------------------------------------
+app.put('/api/v1/members/:id', (req, res) => {
+
+    let index = getIndex(req.params.id);
+
+    if(typeof(index) == 'string'){
+        res.json(error(index))
+    }else{
+
+        let same = false;
+
+        for (let i=0; i<members.length; i++){
+            if(req.body.name == members[i].name && req.params.id != members[i].id){
+                same = true
+                break
+            }
+        }
+        if (same) {
+            res.json(error('same name'))
+        }else{
+            members[index].name = req.body.name;
+            res.json(success(true))  
+        }
+    }
+
+})
+
+
+//-----------------------------------GET BY MEMBERS--------------------------------------------------------------
 app.get('/api/v1/members', (req, res) => {
     if(req.query.max != undefined && req.query.max > 0){
         res.json(success(members.slice(0, req.query.max)))
@@ -52,6 +81,7 @@ app.get('/api/v1/members', (req, res) => {
         res.json(success(members))
     }
 })
+
 
 
 
