@@ -4,6 +4,7 @@ const bodyParser = require('body-parser')
 const express = require('express')
 const morgan = require('morgan')
 const app = express()
+const config = require('./config')
 
 
 //--------------------------------------------Members-----------------------------------------------------
@@ -32,7 +33,7 @@ app.use(morgan('dev'))
 app.use(express.json()) // for parsing application/json
 app.use(express.urlencoded({ extended: true })) // for parsing application/x-www-form-urlencoded
 
-app.use('/api/v1/members', MembersRouter)
+app.use(config.rootAPI+'members', MembersRouter)
 
 
 
@@ -147,7 +148,7 @@ MembersRouter.route('/')
 
 
 //--------------------------------------Listen-----------------------------------------------------------
-app.listen(8080, () => console.log('Started on port 8080.'))
+app.listen(config.port, () => console.log('Started on port '+config.port))
 
 
 
