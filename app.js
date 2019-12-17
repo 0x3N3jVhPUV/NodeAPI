@@ -1,206 +1,68 @@
-require ('babel-register')
-const mysql = require("mysql")
-const {success, error} = require('./assets/functions')
+require('babel-register')
+const {checkAndChange} = require('./assets/functions')
+const mysql = require('promise-mysql')
 const bodyParser = require('body-parser')
 const express = require('express')
-const morgan = require('morgan')
+const morgan = require('morgan')('dev')
 const config = require('./assets/config')
 
-
-
-//--------------------------------------------Connecting with mysql db-----------------------------------------------------
-const db = mysql.createConnection({
+mysql.createConnection({
     host: config.db.host,
     database: config.db.database,
-    user:config.db.user,
+    user: config.db.user,
     password: config.db.password
-})
+    }).then((db) => {
 
-db.connect((err) => {
-    if(err){
-        console.log(err.message)
-    }else{
         console.log('Connected.')
+
         const app = express()
 
-        //--------------------------------------------Router-----------------------------------------------------
         let MembersRouter = express.Router()
+        let Members = require('./assets/classes/members-class')(db, config)
 
+        app.use(morgan)
+        app.use(bodyParser.json());
+        app.use(bodyParser.urlencoded({ extended: true }));
 
-        //---------------------------------Middleware-------------------------------------------------------
-        app.use(morgan('dev'))
-
-        app.use(express.json()) // for parsing application/json
-        app.use(express.urlencoded({ extended: true })) // for parsing application/x-www-form-urlencoded
-
-
-        //-----------------------------------GET/PUT/DELETE BY ID--------------------------------------------------------------
         MembersRouter.route('/:id')
 
-            //Récupère un membre avec son ID
-            .get((req, res) => {
-
-                db.query('SELECT * FROM members WHERE id = ?', [req.params.id], (err, result) => {
-                    if(err){
-                        res.json(error(err.message))
-                    }else{
-                        if(result[0] != undefined){
-                            res.json(success(result[0]))
-                        }else{
-                            res.json(error('Wrong id'))
-                        }
-                    }
-                })
-
+            // Récupère un membre avec son ID
+            .get(async (req, res) => {
+                let member = await Members.getByID(req.params.id)
+                res.json(checkAndChange(member))
             })
 
-            //Update un membre avec son ID
-            .put((req, res) => {
-
-                if (req.body.name) {
-
-                    db.query('SELECT * FROM members WHERE id = ?', [req.params.id], (err, result) => {
-                        if (err) {
-                            res.json(error(err.message))
-                        } else {
-
-                            if (result[0] != undefined) {
-
-                                db.query('SELECT * FROM members WHERE name = ? AND id = ?', [req.body.name, req.params.id], (err, result) => {
-                                    if (err) {
-                                        res.json(error(err.message))
-                                    } else {
-                                        console.log(result[0])
-                                        if (result[0] != undefined) {
-                                            res.json(error('same name'))
-                                        } else {
-
-                                            db.query('UPDATE members SET name = ? WHERE id = ?', [req.body.name, req.params.id], (err, result) => {
-                                                if (err) {
-                                                    res.json(error(err.message))
-                                                } else {
-                                                    res.json(success(true))
-                                                }
-                                            })
-
-                                        }
-
-                                    }
-                                })
-
-                            } else {
-                                res.json(error('Wrong id'))
-                            }
-
-                        }
-                    })
-
-                } else {
-                    res.json(error('no name value'))
-                }
-
+            // Modifie un membre avec ID
+            .put(async (req, res) => {
+                let updateMember = await Members.update(req.params.id, req.body.name)
+                res.json(checkAndChange(updateMember))
             })
 
-            //Supprime un membre avec son ID
-            .delete((req, res) => {
-
-
-                db.query('SELECT * FROM members WHERE id = ?', [req.params.id], (err, result) => {
-                    if(err){
-                        res.json(error(err.message))
-                    }else{
-                        if(result[0] != undefined){
-                            db.query('DELETE FROM members WHERE id = ?', [req.params.id] , (err, result) => {
-                                if(err){
-                                    res.json(error(err.message))
-                                }else{
-                                    res.json(success(true))
-                                }
-                            })
-                        }else{
-                            res.json(error('Wrong id'))
-                        }
-                    }
-                })
+            // Supprime un membre avec ID
+            .delete(async (req, res) => {
+                let deleteMember = await Members.delete(req.params.id)
+                res.json(checkAndChange(deleteMember))
             })
 
-            
-
-        //-----------------------------------GET/POST BY MEMBERS--------------------------------------------------------------
         MembersRouter.route('/')
 
-            //Récupère membre
-            .get((req, res) => {
-                if(req.query.max != undefined && req.query.max > 0){
-
-                    db.query('SELECT * FROM members LIMIT 0, ?', [req.query.max], (err, result) => {
-                        if(err){
-                            res.json(error(err.message))
-                        }else{
-                            res.json(success(result))
-                        }
-                    })
-
-                }else if(req.query.max != undefined){
-                    res.json(error('Wrong max value'))
-                }else{
-
-                    db.query('SELECT * FROM members', (err, result) => {
-                        if(err){
-                            res.json(error(err.message))
-                        }else{
-                            res.json(success(result))
-                        }
-                    })
-                }
+            // Récupère tous les membres
+            .get(async (req, res) => {
+                let allMembers = await Members.getAll(req.query.max)
+                res.json(checkAndChange(allMembers))
             })
 
-            //Ajoute membre
-            .post((req, res) => {
-                if(req.body.name) {
-
-                    db.query('SELECT * FROM members WHERE name = ?', [req.body.name] ,(err, result) => {
-                        if(err){
-                            res.json(error(err.message))
-                        }else{
-                            if(result[0] != undefined){
-                                res.json(error('name already taken'))
-                            }else{
-                                db.query('INSERT INTO members(name) VALUES(?)', [req.body.name], (err, result) => {
-                                    if(err){
-                                        res.json(error(err.message))
-                                    }else{
-                                        db.query('SELECT * FROM members WHERE name = ?',[req.body.name], (err, result) => {
-                                            if(err){
-                                                res.json(error(err.message))
-                                            }else{
-                                                res.json(success({
-                                                    id: result[0].id,
-                                                    name: result[0].name
-                                                }))
-                                            }
-                                        })
-                                    }
-                                })
-                            }
-                        }
-                    })
-        
-
-                }else{
-                    res.json(error('no name value'))
-                }
+            // Ajoute un membre avec son nom
+            .post(async (req, res) => {
+                let addMember = await Members.add(req.body.name)
+                res.json(checkAndChange(addMember))
             })
 
+        app.use(config.rootAPI+'members', MembersRouter)
 
-        //--------------------------------------Middleware-----------------------------------------------------------
-        app.use('/api/v1/members', MembersRouter)
-
-
-        //--------------------------------------Listen-----------------------------------------------------------
         app.listen(config.port, () => console.log('Started on port '+config.port))
 
-
-        
-    }
+    }).catch((err) => {
+        console.log('Error during database connection')
+        console.log(err.message)
 })
